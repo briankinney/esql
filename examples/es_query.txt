@@ -1,0 +1,4 @@
+SELECT name, age, job
+FROM employees
+MATCHING salary >= 120000
+;
