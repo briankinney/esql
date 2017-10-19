@@ -1,4 +1,5 @@
 SELECT name, age, job
 FROM employees
-MATCHING salary >= 120000
+WHERE salary >= 120000
+AND name = 'David'
 ;
