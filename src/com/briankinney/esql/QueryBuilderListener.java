@@ -162,4 +162,9 @@ public class QueryBuilderListener extends esqlBaseListener {
             this.lastSortBuilder.order(SortOrder.DESC);
         }
     }
+
+    public void enterLimit_spec(esqlParser.Limit_specContext ctx) {
+        int limit = Integer.parseInt(ctx.getText());
+        this.searchRequestBuilder.setSize(limit);
+    }
 }
