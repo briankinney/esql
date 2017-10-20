@@ -12,6 +12,10 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.ScoreSortBuilder;
+import org.elasticsearch.search.sort.SortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import java.io.IOException;
@@ -19,17 +23,14 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Stack;
 
+/**
+ * Builds a search query using the elasticsearch TransportClient as the query is parsed
+ */
 public class QueryBuilderListener extends esqlBaseListener {
 
     private TransportClient transportClient;
 
-    private String method;
-
-    private String endpoint;
-
     private SearchRequestBuilder searchRequestBuilder;
-
-    private QueryBuilder filterQueryBuilder;
 
     public QueryBuilderListener() {
         InetAddress esAddress;
@@ -135,6 +136,30 @@ public class QueryBuilderListener extends esqlBaseListener {
                 // Stop adding children to the compound query on top of the stack
                 this.queryNodes.pop();
             }
+        }
+    }
+
+    private SortBuilder lastSortBuilder;
+
+    public void enterSort_atom(esqlParser.Sort_atomContext ctx) {
+        String sortTerm = ctx.getChild(esqlParser.Sort_termContext.class, 0).getText();
+        if (sortTerm.equals("SCORE")) {
+            this.lastSortBuilder = new ScoreSortBuilder();
+        }
+        else {
+            this.lastSortBuilder = new FieldSortBuilder(sortTerm);
+        }
+        this.searchRequestBuilder.addSort(this.lastSortBuilder);
+    }
+
+    public void enterSort_direction(esqlParser.Sort_directionContext ctx) {
+        if (ctx.getRuleIndex() == 0) {
+            // ASC
+            this.lastSortBuilder.order(SortOrder.ASC);
+        }
+        else {
+            // DESC
+            this.lastSortBuilder.order(SortOrder.DESC);
         }
     }
 }

@@ -22,7 +22,8 @@ search_query
     : SELECT path_spec
       FROM index_spec
       (WHERE filter_spec)?
-      (GROUP BY aggregation_spec)?
+//    TODO
+//    (GROUP BY aggregation_spec)?
       (ORDER BY sort_spec)?
       (LIMIT limit_spec)?
       ';'

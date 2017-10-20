@@ -12,3 +12,4 @@ TODO
 
  - Reasonable test harness
  - Read-eval-print loop
+ - Sharpen up project structure
