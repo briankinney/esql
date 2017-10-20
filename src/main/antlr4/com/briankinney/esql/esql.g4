@@ -42,8 +42,8 @@ filter_spec
     : leaf_query
     | NOT filter_spec
     | '(' filter_spec ')'
-    | filter_spec (AND filter_spec)+ // boolean query
-    | filter_spec (OR filter_spec)+ // dis max query
+    | filter_spec AND filter_spec // boolean query
+    | filter_spec OR filter_spec // dis max query
     ;
 
 leaf_query
@@ -147,7 +147,7 @@ IDENTIFIER
     ;
 
 fragment UNESCAPED_IDENTIFIER
-    : [_a-zA-Z0-9]+
+    : [\-._a-zA-Z0-9]+
     ;
 
 WS:

@@ -12,21 +12,20 @@ public class LiteralHelper {
 
     public static Object getLiteral(esqlParser.LiteralContext literalContext) {
         String body = literalContext.getText();
-        switch (literalContext.getRuleIndex()) {
-            case 0:
-                // String literal
-                // Remove first and last '
-                return body.substring(1, body.length() - 1);
-            case 1:
-                // Integer literal
-                return Integer.parseInt(body);
-            case 2:
-                // Numeric literal
-                // Note: elasticsearch doesn't seem to support decimal
-                return Float.parseFloat(body);
-            default:
-                // TODO: better error handling
-                return null;
+        if (literalContext.STRING_LITERAL() != null) {
+            // String literal
+            // Remove first and last '
+            return body.substring(1, body.length() - 1);
+        } else if (literalContext.INTEGER_LITERAL() != null) {
+            // Integer literal
+            return Integer.parseInt(body);
+        } else if (literalContext.NUMERIC_LITERAL() != null) {
+            // Numeric literal
+            // Note: elasticsearch doesn't seem to support decimal
+            return Float.parseFloat(body);
+        } else {
+            // TODO: better error handling
+            return null;
         }
     }
 }
