@@ -15,6 +15,6 @@ public class Tool {
         TokenStream tokenStream = new CommonTokenStream(tokenSource);
         esqlParser parser = new esqlParser(tokenStream);
         parser.addParseListener(new QueryBuilderListener());
-        parser.compileParseTreePattern("search_query", 0);
+        parser.search_query();
     }
 }
