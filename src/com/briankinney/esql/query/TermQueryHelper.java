@@ -5,6 +5,7 @@ import org.elasticsearch.index.query.*;
 /**
  * Produces QueryBuilders from simple atomic boolean formulae, such as:
  * age > 24
+ * name != 'John'
  */
 public class TermQueryHelper {
     private static final String EQUAL = "=";

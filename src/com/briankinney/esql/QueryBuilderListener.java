@@ -2,7 +2,6 @@ package com.briankinney.esql;
 
 
 import com.briankinney.esql.query.*;
-import org.antlr.v4.runtime.ParserRuleContext;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -18,8 +17,7 @@ import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Stack;
 
 public class QueryBuilderListener extends esqlBaseListener {
 
@@ -88,9 +86,10 @@ public class QueryBuilderListener extends esqlBaseListener {
         this.searchRequestBuilder.setIndices(indexName);
     }
 
-    private Map<ParserRuleContext, PrimitiveQueryBuilder> queryNodes = new HashMap<ParserRuleContext, PrimitiveQueryBuilder>();
+    private Stack<PrimitiveQueryBuilder> queryNodes = new Stack<PrimitiveQueryBuilder>();
 
     public void enterFilter_spec(esqlParser.Filter_specContext ctx) {
+        QueryBuilder b = null;
         if (ctx.getRuleIndex() == 0) {
             // Leaf query
             // get the comparator
@@ -99,32 +98,43 @@ public class QueryBuilderListener extends esqlBaseListener {
             String fieldName = ctx.getChild(esqlParser.FieldContext.class, 0).getText();
             // get the literal
             Object literal = LiteralHelper.getLiteral(ctx.getChild(esqlParser.LiteralContext.class, 0));
-            QueryBuilder b = TermQueryHelper.getTermQuery(fieldName, comparator, literal);
-            if (this.queryNodes.containsKey(ctx.getParent())) {
-                queryNodes.get(ctx.getParent()).addChild(b);
-            } else {
-                // Assume that this leaf query is the top-level query
-                this.searchRequestBuilder.setQuery(b);
-            }
+            b = TermQueryHelper.getTermQuery(fieldName, comparator, literal);
         } else if (ctx.getRuleIndex() == 1) {
             // NOT query
-            PrimitiveQueryBuilder b = new NotQueryBuilder();
-            this.queryNodes.put(ctx, b);
+            PrimitiveQueryBuilder pb = new NotQueryBuilder();
+            this.queryNodes.push(pb);
+            b = pb;
         } else if (ctx.getRuleIndex() == 2) {
             // Parentheses
-            if (this.queryNodes.containsKey(ctx.getParent())) {
-                // No need to create a new node, just add a new reference to the parent
-                this.queryNodes.put(ctx, this.queryNodes.get(ctx.getParent()));
-                // If this is not the case, then the top level of the query should be parentheses, so no action is needed
-            }
+            // I believe there is no need for action here
         } else if (ctx.getRuleIndex() == 3) {
             // AND query
-            PrimitiveQueryBuilder b = new AndQueryBuilder();
-            this.queryNodes.put(ctx, b);
+            PrimitiveQueryBuilder pb = new AndQueryBuilder();
+            this.queryNodes.push(pb);
+            b = pb;
         } else if (ctx.getRuleIndex() == 4) {
             // OR query
-            PrimitiveQueryBuilder b = new OrQueryBuilder();
-            this.queryNodes.put(ctx, b);
+            PrimitiveQueryBuilder pb = new OrQueryBuilder();
+            this.queryNodes.push(pb);
+            b = pb;
+        }
+        // TODO: better error handling when b == null
+        // Add this QueryBuilder as a child of the parent in the tree
+        if (!this.queryNodes.empty()) {
+            queryNodes.peek().addChild(b);
+        } else {
+            // Assume that this query is the top-level query
+            this.searchRequestBuilder.setQuery(b);
+        }
+    }
+
+    public void exitFilter_spec(esqlParser.Filter_specContext ctx) {
+        if (ctx.getRuleIndex() != 0 && ctx.getRuleIndex() != 2) {
+            // Neither leaf query nor Parentheses
+            if (!this.queryNodes.empty()) {
+                // Stop adding children to the compound query on top of the stack
+                this.queryNodes.pop();
+            }
         }
     }
 }
