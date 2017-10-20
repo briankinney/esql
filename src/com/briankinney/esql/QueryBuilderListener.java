@@ -37,9 +37,10 @@ public class QueryBuilderListener extends esqlBaseListener {
         try {
             esAddress = InetAddress.getByName("localhost");
         } catch (UnknownHostException e) {
-            System.out.println("Unknown Host!!!!");
+            e.printStackTrace();
             return;
         }
+        // TODO: settings
         this.transportClient = new PreBuiltTransportClient(Settings.EMPTY)
                 .addTransportAddress(new InetSocketTransportAddress(esAddress, 9300));
     }
