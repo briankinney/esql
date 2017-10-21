@@ -94,7 +94,11 @@
             <artifactId>x-pack-transport</artifactId>
             <version>5.6.3</version>
         </dependency>
-
+        <dependency>
+            <groupId>net.sf.jopt-simple</groupId>
+            <artifactId>jopt-simple</artifactId>
+            <version>4.9</version>
+        </dependency>
     </dependencies>
 
 
