@@ -3,13 +3,12 @@ TODO
 
 ### Language features
 
- - Term query
- - Range query
- - AND query (boolean)
- - OR query (dis max)
+ - Select computed values from fields
+ - Aggregations
+ - Complex conditionals (field-to-field and field-to-function)
+ - Query language keyword case-insensitivity
 
 ### Other
 
  - Reasonable test harness
  - Read-eval-print loop
- - Sharpen up project structure
