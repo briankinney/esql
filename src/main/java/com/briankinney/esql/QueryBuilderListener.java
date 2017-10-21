@@ -2,23 +2,15 @@ package com.briankinney.esql;
 
 
 import com.briankinney.esql.query.*;
-import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.ScoreSortBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
-import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.Stack;
 
@@ -31,34 +23,12 @@ public class QueryBuilderListener extends esqlBaseListener {
 
     private SearchRequestBuilder searchRequestBuilder;
 
-    public QueryBuilderListener() {
-        // TODO: Factor client construction out of this constructor
-        InetAddress esAddress;
-        try {
-            esAddress = InetAddress.getByAddress("localhost", new byte[]{0, 0, 0, 0});
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-            return;
-        }
-        // TODO: settings
-        this.transportClient = new PreBuiltTransportClient(Settings.builder()
-                //.put("client.transport.sniff", true)
-                //.put("xpack.security.user", "transport_client_user:changeme")
-                .put("cluster.name", "docker-cluster").build())
-                .addTransportAddress(new InetSocketTransportAddress(esAddress, 9300));
+    public QueryBuilderListener(TransportClient transportClient) {
+        this.transportClient = transportClient;
     }
 
     public void enterSearch_query(esqlParser.Search_queryContext ctx) {
         this.searchRequestBuilder = SearchAction.INSTANCE.newRequestBuilder(this.transportClient);
-    }
-
-    public void exitSearch_query(esqlParser.Search_queryContext ctx) {
-        System.out.println(this.searchRequestBuilder.toString());
-        ActionFuture<SearchResponse> actionFuture = this.searchRequestBuilder.execute();
-        SearchResponse response = actionFuture.actionGet();
-        for (SearchHit hit : response.getHits()) {
-            System.out.println(hit.getSourceAsString());
-        }
     }
 
     private boolean gatherPaths = false;
@@ -174,5 +144,9 @@ public class QueryBuilderListener extends esqlBaseListener {
     public void enterLimit_spec(esqlParser.Limit_specContext ctx) {
         int limit = Integer.parseInt(ctx.getText());
         this.searchRequestBuilder.setSize(limit);
+    }
+
+    public SearchRequestBuilder getSearchRequestBuilder() {
+        return this.searchRequestBuilder;
     }
 }
