@@ -10,6 +10,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -49,5 +50,9 @@ public class EsqlClient {
 
     public SearchResponse executeSearch(InputStream sqlInputStream) {
         return this.executeSearchAsync(sqlInputStream).actionGet();
+    }
+
+    public SearchResponse executeSearch(String sqlString) {
+        return this.executeSearch(new ByteArrayInputStream(sqlString.getBytes()));
     }
 }
