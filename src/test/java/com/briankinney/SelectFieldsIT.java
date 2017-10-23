@@ -12,26 +12,26 @@ import static org.junit.Assert.*;
 
 public class SelectFieldsIT extends EsqlTestCase {
 
-    private String indexName;
+    private String messagesIndexName;
 
     @Before
     public void before() {
-        indexName = randomIndexName();
-        createMessagesIndex(indexName);
+        messagesIndexName = randomIndexName("messages");
+        createMessagesIndex(messagesIndexName);
     }
 
     @After
     public void after() {
-        deleteIndex(indexName);
+        deleteIndex(messagesIndexName);
     }
 
     @Test
     public void TestSimpleSourceFields() {
-        addMessage(indexName, "Alice", "Bob", "Secret", "Message", 0L);
+        addMessage(messagesIndexName, "Alice", "Bob", "Secret", "Message", 0L);
 
         waitForEs();
 
-        String query = String.format("SELECT from, to FROM %s;", indexName);
+        String query = String.format("SELECT from, to FROM %s;", messagesIndexName);
 
         SearchResponse searchResponse = esqlClient.executeSearch(query);
 

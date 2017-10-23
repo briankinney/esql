@@ -1,6 +1,7 @@
 package com.briankinney;
 
 import com.briankinney.esql.client.EsqlClient;
+import org.apache.commons.codec.binary.Base64;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
@@ -14,6 +15,7 @@ import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Random;
 
 /**
  * Base class for esql integration tests.
@@ -26,6 +28,7 @@ class EsqlTestCase {
 
     EsqlClient esqlClient;
     TransportClient transportClient;
+    Random random = new Random();
 
     EsqlTestCase() {
         InetAddress esAddress;
@@ -54,8 +57,15 @@ class EsqlTestCase {
         }
     }
 
-    String randomIndexName() {
-        return "random-name-lul";
+    private String randomLetters() {
+        byte[] randomBytes = new byte[4];
+        random.nextBytes(randomBytes);
+
+        return Base64.encodeBase64URLSafeString(randomBytes).toLowerCase();
+    }
+
+    String randomIndexName(String baseName) {
+        return String.format("%s-%s", baseName, randomLetters());
     }
 
     void createMessagesIndex(String indexName) {
