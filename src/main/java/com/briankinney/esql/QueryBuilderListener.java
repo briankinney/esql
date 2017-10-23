@@ -62,11 +62,11 @@ public class QueryBuilderListener extends esqlBaseListener {
         this.searchRequestBuilder.setIndices(indexName);
     }
 
-    private Stack<PrimitiveQueryBuilder> queryNodes = new Stack<PrimitiveQueryBuilder>();
+    private Stack<SimpleParentQueryBuilder> queryNodes = new Stack<SimpleParentQueryBuilder>();
 
     public void enterFilter_spec(esqlParser.Filter_specContext ctx) {
         boolean isTop = this.queryNodes.empty();
-        PrimitiveQueryBuilder parent = null;
+        SimpleParentQueryBuilder parent = null;
         if (!isTop) {
             parent = this.queryNodes.peek();
         }
@@ -82,17 +82,17 @@ public class QueryBuilderListener extends esqlBaseListener {
             b = TermQueryHelper.getTermQuery(fieldName, comparator, literal);
         } else if (ctx.NOT() != null) {
             // NOT query
-            PrimitiveQueryBuilder pb = new NotQueryBuilder();
+            SimpleParentQueryBuilder pb = new NotQueryBuilder();
             this.queryNodes.push(pb);
             b = pb;
         } else if (ctx.AND() != null) {
             // AND query
-            PrimitiveQueryBuilder pb = new AndQueryBuilder();
+            SimpleParentQueryBuilder pb = new AndQueryBuilder();
             this.queryNodes.push(pb);
             b = pb;
         } else if (ctx.OR() != null) {
             // OR query
-            PrimitiveQueryBuilder pb = new OrQueryBuilder();
+            SimpleParentQueryBuilder pb = new OrQueryBuilder();
             this.queryNodes.push(pb);
             b = pb;
         } else {
