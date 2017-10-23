@@ -25,9 +25,12 @@ public class SelectFilterIT extends EsqlTestCase {
         deleteIndex(indexName);
     }
 
-    private void wait(int millis) {
+    /**
+     * Wait a second for ES consistency
+     */
+    private void waitForEs() {
         try {
-            Thread.sleep(millis);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -42,9 +45,9 @@ public class SelectFilterIT extends EsqlTestCase {
         addMessage(indexName, "Brian", "World", "Hello", "Hello world", 4L);
         addMessage(indexName, "World", "Brian", "Leave me alone", "Go away", 5L);
 
-        wait(1000);
+        waitForEs();
 
-        String query = String.format("SELECT from, to, title, body, timestamp FROM %s WHERE from = 'World' AND timestamp > 4;", indexName);
+        String query = String.format("SELECT from, to, title, body, timestamp FROM %s WHERE timestamp > 4;", indexName);
 
         SearchResponse searchResponse = esqlClient.executeSearch(new ByteArrayInputStream(query.getBytes()));
 
@@ -62,7 +65,7 @@ public class SelectFilterIT extends EsqlTestCase {
     public void TestAndOrOrder() {
         addMessage(indexName, "Alice", "Bob", "Secret", "Message", 0L);
 
-        wait(1000);
+        waitForEs();
 
         // WHERE clause should eval to true
         // If OR is evaluated before AND it will eval to false
@@ -77,7 +80,7 @@ public class SelectFilterIT extends EsqlTestCase {
     public void TestParentheses() {
         addMessage(indexName, "Alice", "Bob", "Secret", "Message", 0L);
 
-        wait(1000);
+        waitForEs();
 
         // Make sure the document got in there
         String query = String.format("SELECT * FROM %s;", indexName);
