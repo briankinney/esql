@@ -40,8 +40,8 @@ index_spec: IDENTIFIER;
 
 filter_spec
     : leaf_query
-    | NOT filter_spec
     | '(' filter_spec ')'
+    | NOT filter_spec
     | filter_spec AND filter_spec // boolean query
     | filter_spec OR filter_spec // dis max query
     ;
