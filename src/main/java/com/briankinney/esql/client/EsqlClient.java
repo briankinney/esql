@@ -43,8 +43,6 @@ public class EsqlClient {
 
         SearchRequestBuilder b = listener.getSearchRequestBuilder();
 
-        System.err.println(b.toString());
-
         return b.execute();
     }
 

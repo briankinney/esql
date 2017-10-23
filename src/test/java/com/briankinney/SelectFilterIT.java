@@ -6,9 +6,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.ByteArrayInputStream;
+
+import static org.junit.Assert.assertEquals;
 
 public class SelectFilterIT extends EsqlTestCase {
 
@@ -23,17 +23,6 @@ public class SelectFilterIT extends EsqlTestCase {
     @After
     public void after() {
         deleteIndex(indexName);
-    }
-
-    /**
-     * Wait a second for ES consistency
-     */
-    private void waitForEs() {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     @Test

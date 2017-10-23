@@ -1,7 +1,6 @@
 package com.briankinney;
 
 import com.briankinney.esql.client.EsqlClient;
-import junit.framework.TestCase;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
@@ -16,6 +15,13 @@ import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+/**
+ * Base class for esql integration tests.
+ * <p>
+ * Requires a development instance running at localhost:9200 with cluster name docker-cluster.
+ * <p>
+ * misc/es-docker.sh is provided to set this up for convenience
+ */
 class EsqlTestCase {
 
     EsqlClient esqlClient;
@@ -35,6 +41,17 @@ class EsqlTestCase {
                 .addTransportAddress(new InetSocketTransportAddress(esAddress, 9300));
 
         this.esqlClient = new EsqlClient(this.transportClient);
+    }
+
+    /**
+     * Wait a second for ES consistency
+     */
+    static void waitForEs() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     String randomIndexName() {
