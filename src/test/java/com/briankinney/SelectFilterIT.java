@@ -86,4 +86,23 @@ public class SelectFilterIT extends EsqlTestCase {
 
         assertEquals(0, searchResponse.getHits().totalHits);
     }
+
+    @Test
+    public void TestNotResolvedBeforeAnd() {
+        addMessage(messagesIndexName, "Alice", "Bob", "Secret", "Message", 0L);
+
+        waitForEs();
+
+        String query = String.format("SELECT * FROM %s;", messagesIndexName);
+
+        SearchResponse searchResponse = esqlClient.executeSearch(query);
+
+        assertEquals(1, searchResponse.getHits().totalHits);
+
+        query = String.format("SELECT * FROM %s WHERE NOT from = 'Alice' AND to = 'Charles';", messagesIndexName);
+
+        searchResponse = esqlClient.executeSearch(query);
+
+        assertEquals(0, searchResponse.getHits().totalHits);
+    }
 }
