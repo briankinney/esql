@@ -10,6 +10,7 @@ import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.ScoreSortBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.LinkedList;
 import java.util.Stack;
@@ -50,10 +51,24 @@ public class QueryBuilderListener extends esqlBaseListener {
         this.gatherPaths = false;
     }
 
-    public void enterField(esqlParser.FieldContext ctx) {
-        if (this.gatherPaths) {
-            // Building the search request
-            this.sources.add(ctx.getText());
+    public void enterSelected_formula(esqlParser.Selected_formulaContext ctx) {
+        if (!this.gatherPaths) {
+            // This shouldn't happen
+            System.err.println("Entered selected_formula without entering select_spec");
+        }
+        else {
+            if (ctx.field() != null) {
+                // Simple field select
+                this.sources.add(IdentifierHelper.extractIdentifier(ctx.getText()));
+            }
+            else if (ctx.painless_script() != null) {
+                // TODO
+                throw new NotImplementedException();
+            }
+            else if (ctx.aggregate_formula() != null) {
+                // TODO
+                throw new NotImplementedException();
+            }
         }
     }
 

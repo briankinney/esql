@@ -116,7 +116,8 @@ aggregation_spec
 
 aggregation_term
     : field_ref
-    | formula
+    | field
+    | painless_script
     ;
 
 field_ref

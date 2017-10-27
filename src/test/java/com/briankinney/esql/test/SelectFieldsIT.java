@@ -31,7 +31,7 @@ public class SelectFieldsIT extends EsqlTestCase {
 
         waitForEs();
 
-        String query = String.format("SELECT from, to FROM %s;", messagesIndexName);
+        String query = String.format("SELECT \"from\", \"to\" FROM %s;", messagesIndexName);
 
         SearchResponse searchResponse = esqlClient.executeSearch(query);
 

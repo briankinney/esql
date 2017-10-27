@@ -107,14 +107,14 @@ public class SelectFilterIT extends EsqlTestCase {
         assertEquals(0, searchResponse.getHits().totalHits);
     }
 
-    @Ignore("Not implemented yet")
+    @Ignore("Boolean formula of the form literal COMPARATOR field are not implemented yet")
     @Test
     public void TestInvertedComparison() {
         addMessage(messagesIndexName, "Alice", "Bob", "Secret", "Massage ;)", 10L);
 
         waitForEs();
 
-        String query = String.format("SELECT * FROM %s WHERE timestamp > 0;", messagesIndexName);
+        String query = String.format("SELECT * FROM %s WHERE 0 < timestamp;", messagesIndexName);
 
         SearchResponse searchResponse = esqlClient.executeSearch(query);
 
