@@ -1,7 +1,5 @@
 package com.briankinney.esql.query;
 
-import com.briankinney.esql.esqlParser;
-
 public class IdentifierHelper {
     /**
      * Convert a token referencing an identifier into a plain string identifier reference.

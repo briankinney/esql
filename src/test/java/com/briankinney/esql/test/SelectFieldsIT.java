@@ -2,6 +2,7 @@ package com.briankinney.esql.test;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,5 +49,25 @@ public class SelectFieldsIT extends EsqlTestCase {
         assertFalse(sourceMap.containsKey("title"));
         assertFalse(sourceMap.containsKey("body"));
         assertFalse(sourceMap.containsKey("timestamp"));
+    }
+
+    @Test
+    public void TestScriptField() {
+        addMessage(messagesIndexName, "Alice", "Bob", "Secret", "Message", 12L);
+
+        waitForEs();
+
+        String query = String.format("SELECT PAINLESS `doc['timestamp'].getValue() * 2` FROM %s;", messagesIndexName);
+
+        SearchResponse searchResponse = esqlClient.executeSearch(query);
+
+        SearchHits hits = searchResponse.getHits();
+
+        assertEquals(1, hits.totalHits);
+
+        SearchHit hit = hits.getAt(0);
+
+        assertTrue(hit.getFields().containsKey("script-field-0"));
+        assertEquals(24L, hit.getField("script-field-0").getValue());
     }
 }

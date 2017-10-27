@@ -6,13 +6,16 @@ import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.script.Script;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.ScoreSortBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Stack;
 
 /**
@@ -36,6 +39,13 @@ public class QueryBuilderListener extends esqlBaseListener {
 
     private LinkedList<String> sources = new LinkedList<String>();
 
+    private Map<String, Script> scriptFields =
+            new HashMap<String, Script>();
+
+    private String anonymousScriptFieldName() {
+        return String.format("script-field-%d", scriptFields.size());
+    }
+
     public void enterPath_spec(esqlParser.Path_specContext ctx) {
         // If "*", no action is required because default behavior is to return everything
         if (!ctx.getText().equals("*")) {
@@ -47,6 +57,9 @@ public class QueryBuilderListener extends esqlBaseListener {
         // Stop adding fields to the list of stored fields
         if (this.gatherPaths) {
             this.searchRequestBuilder.setFetchSource(this.sources.toArray(new String[this.sources.size()]), null);
+            for (Map.Entry<String, Script> entry : this.scriptFields.entrySet()) {
+                this.searchRequestBuilder.addScriptField(entry.getKey(), entry.getValue());
+            }
         }
         this.gatherPaths = false;
     }
@@ -55,17 +68,19 @@ public class QueryBuilderListener extends esqlBaseListener {
         if (!this.gatherPaths) {
             // This shouldn't happen
             System.err.println("Entered selected_formula without entering select_spec");
-        }
-        else {
+        } else {
             if (ctx.field() != null) {
                 // Simple field select
                 this.sources.add(IdentifierHelper.extractIdentifier(ctx.getText()));
-            }
-            else if (ctx.painless_script() != null) {
-                // TODO
-                throw new NotImplementedException();
-            }
-            else if (ctx.aggregate_formula() != null) {
+            } else if (ctx.painless_script() != null) {
+                String name = anonymousScriptFieldName();
+                String painlessScriptText = ctx.painless_script().PAINLESS_SCRIPT_BODY().getText();
+                // Remove the ` marking the beginning and end of the script
+                painlessScriptText = painlessScriptText.substring(1, painlessScriptText.length() - 1);
+                // Note: depends on default script language == "painless"
+                Script painlessScript = new Script(painlessScriptText);
+                this.scriptFields.put(name, painlessScript);
+            } else if (ctx.aggregate_formula() != null) {
                 // TODO
                 throw new NotImplementedException();
             }

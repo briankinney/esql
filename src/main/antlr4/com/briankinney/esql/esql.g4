@@ -46,11 +46,11 @@ selected_formula
     ;
 
 painless_script
-    : PAINLESS '`' PAINLESS_SCRIPT_BODY '`'
+    : PAINLESS PAINLESS_SCRIPT_BODY
     ;
 
 PAINLESS_SCRIPT_BODY
-    : [^`]+  // TODO: script validation
+    : '`' .*? '`'  // TODO: script validation
     ;
 
 aggregate_formula
