@@ -50,7 +50,7 @@ painless_script
     ;
 
 PAINLESS_SCRIPT_BODY
-    : [^`]+
+    : [^`]+  // TODO: script validation
     ;
 
 aggregate_formula
@@ -72,8 +72,8 @@ filter_spec
 
 leaf_query
     : field COMPARATOR literal // leaf query
-    | literal COMPARATOR field // leaf query
 //    TODO
+//  | literal COMPARATOR field // leaf query
 //  | formula COMPARATOR formula
 //  | formula BETWEEN formula AND formula
 //  | field

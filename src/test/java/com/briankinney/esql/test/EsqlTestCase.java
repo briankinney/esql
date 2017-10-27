@@ -1,4 +1,4 @@
-package com.briankinney;
+package com.briankinney.esql.test;
 
 import com.briankinney.esql.client.EsqlClient;
 import org.apache.commons.codec.binary.Base64;

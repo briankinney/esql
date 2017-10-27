@@ -1,9 +1,10 @@
-package com.briankinney;
+package com.briankinney.esql.test;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -104,5 +105,19 @@ public class SelectFilterIT extends EsqlTestCase {
         searchResponse = esqlClient.executeSearch(query);
 
         assertEquals(0, searchResponse.getHits().totalHits);
+    }
+
+    @Ignore("Not implemented yet")
+    @Test
+    public void TestInvertedComparison() {
+        addMessage(messagesIndexName, "Alice", "Bob", "Secret", "Massage ;)", 10L);
+
+        waitForEs();
+
+        String query = String.format("SELECT * FROM %s WHERE timestamp > 0;", messagesIndexName);
+
+        SearchResponse searchResponse = esqlClient.executeSearch(query);
+
+        assertEquals(1, searchResponse.getHits().totalHits);
     }
 }
