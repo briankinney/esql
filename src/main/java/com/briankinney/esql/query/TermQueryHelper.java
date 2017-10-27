@@ -14,7 +14,6 @@ public class TermQueryHelper {
     private static final String GREATER_THAN = ">";
     private static final String LESS_THAN_OR_EQUAL = "<=";
     private static final String GREATER_THAN_OR_EQUAL = ">=";
-    // TODO: private static final String LIKE = "~=";
 
 
     public static QueryBuilder getTermQuery(String field_name, String comparator, Object literal) {

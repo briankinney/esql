@@ -17,6 +17,11 @@ DESC: 'DESC';
 LIKE: 'LIKE';
 GROUP: 'GROUP';
 SCORE: 'SCORE';
+ADD: '+';
+SUB: '-';
+MULT: '*';
+DIV: '/';
+PAINLESS: 'PAINLESS';
 
 search_query
     : SELECT path_spec
@@ -31,7 +36,26 @@ search_query
 
 path_spec
     : '*' // all
-    | formula (',' formula)*
+    | selected_formula (',' selected_formula)*
+    ;
+
+selected_formula
+    : field
+    | painless_script
+    | aggregate_formula
+    ;
+
+painless_script
+    : PAINLESS '`' PAINLESS_SCRIPT_BODY '`'
+    ;
+
+PAINLESS_SCRIPT_BODY
+    : [^`]+
+    ;
+
+aggregate_formula
+    : function '(' field ')'
+    | function '(' painless_script ')'
     ;
 
 field: IDENTIFIER;
@@ -124,20 +148,20 @@ COMPARATOR
     ;
 
 BINARY_OPERATOR
-    : '+'
-    | '-'
-    | '*'
-    | '/'
+    : ADD
+    | SUB
+    | MULT
+    | DIV
     ;
 
 STRING_LITERAL: '\''.*?'\'';
 
 INTEGER_LITERAL
-    : ('0' .. '9') +
+    : '-'? ('0' .. '9') +
     ;
 
 NUMERIC_LITERAL
-    : ('0' .. '9') * '.' ('0' .. '9') +
+    : '-'? ('0' .. '9') * '.' ('0' .. '9') +
     ;
 
 
@@ -147,7 +171,7 @@ IDENTIFIER
     ;
 
 fragment UNESCAPED_IDENTIFIER
-    : [\-._a-zA-Z0-9]+
+    : [-._a-zA-Z0-9]+
     ;
 
 WS:
