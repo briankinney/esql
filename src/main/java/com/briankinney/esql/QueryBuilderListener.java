@@ -5,8 +5,12 @@ import com.briankinney.esql.query.*;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.xcontent.ObjectParser;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.script.Script;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.elasticsearch.search.aggregations.support.ValueType;
 import org.elasticsearch.search.aggregations.support.ValuesSourceAggregationBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.ScoreSortBuilder;
@@ -37,10 +41,13 @@ public class QueryBuilderListener extends esqlBaseListener {
 
     private boolean gatherPaths = false;
 
+    private int selectTermIndex = 1;
+
+    private Map<Integer, Object> nonAggSelectTerms = new HashMap<Integer, Object>();
+
     private LinkedList<String> sources = new LinkedList<String>();
 
-    private Map<String, Script> scriptFields =
-            new HashMap<String, Script>();
+    private Map<String, Script> scriptFields = new HashMap<String, Script>();
 
     private Map<String, ValuesSourceAggregationBuilder> leafAggregations = new HashMap<String, ValuesSourceAggregationBuilder>();
 
@@ -77,7 +84,9 @@ public class QueryBuilderListener extends esqlBaseListener {
         } else {
             if (ctx.field() != null) {
                 // Simple field select
-                this.sources.add(IdentifierHelper.extractIdentifier(ctx.getText()));
+                String fieldName = IdentifierHelper.extractIdentifier(ctx.getText());
+                this.sources.add(fieldName);
+                this.nonAggSelectTerms.put(this.selectTermIndex, fieldName);
             } else if (ctx.painless_script() != null) {
                 String name = anonymousScriptFieldName();
                 String painlessScriptText = ctx.painless_script().PAINLESS_SCRIPT_BODY().getText();
@@ -86,24 +95,24 @@ public class QueryBuilderListener extends esqlBaseListener {
                 // Note: depends on default script language == "painless"
                 Script painlessScript = new Script(painlessScriptText);
                 this.scriptFields.put(name, painlessScript);
+                this.nonAggSelectTerms.put(this.selectTermIndex, painlessScript);
             } else if (ctx.aggregate_formula() != null) {
                 String aggregationType = ctx.aggregate_formula().getText();
                 String aggregationName = anonymousAggregationName(aggregationType);
                 ValuesSourceAggregationBuilder aggregationBuilder = AggregationHelper.getAggregationBuilder(aggregationName, aggregationType);
                 if (ctx.aggregate_formula().field() != null) {
                     aggregationBuilder.field(ctx.aggregate_formula().field().getText());
-                }
-                else if (ctx.aggregate_formula().painless_script() != null) {
+                } else if (ctx.aggregate_formula().painless_script() != null) {
                     String scriptText = ctx.aggregate_formula().painless_script().PAINLESS_SCRIPT_BODY().getText();
                     scriptText = scriptText.substring(1, scriptText.length() - 1);
                     Script script = new Script(scriptText);
                     aggregationBuilder.script(script);
-                }
-                else {
+                } else {
                     throw new RuntimeException("Unexpected aggregate_formula branch");
                 }
                 this.leafAggregations.put(aggregationName, aggregationBuilder);
             }
+            this.selectTermIndex++;
         }
     }
 
@@ -129,7 +138,7 @@ public class QueryBuilderListener extends esqlBaseListener {
             String fieldName = ctx.leaf_query().field().getText();
             // get the literal
             Object literal = LiteralHelper.getLiteral(ctx.leaf_query().literal());
-            b = TermQueryHelper.getTermQuery(fieldName, comparator, literal);
+            b = ComparisonQueryHelper.getTermQuery(fieldName, comparator, literal);
         } else if (ctx.NOT() != null) {
             // NOT query
             SimpleParentQueryBuilder pb = new NotQueryBuilder();
@@ -172,6 +181,7 @@ public class QueryBuilderListener extends esqlBaseListener {
     private SortBuilder lastSortBuilder;
 
     public void enterSort_atom(esqlParser.Sort_atomContext ctx) {
+        // TODO: if aggregations are present, sort the results of aggregations
         String sortTerm = ctx.getChild(esqlParser.Sort_termContext.class, 0).getText();
         if (sortTerm.equals("SCORE")) {
             this.lastSortBuilder = new ScoreSortBuilder();
@@ -194,6 +204,74 @@ public class QueryBuilderListener extends esqlBaseListener {
     public void enterLimit_spec(esqlParser.Limit_specContext ctx) {
         int limit = Integer.parseInt(ctx.getText());
         this.searchRequestBuilder.setSize(limit);
+    }
+
+    private AggregationBuilder parentAggregationBuilder = null;
+
+    private boolean hasAggregations = false;
+
+    public void enterAggregation_term(esqlParser.Aggregation_termContext ctx) {
+        if (ctx.field_ref() != null) {
+            int fieldReference = Integer.parseInt(ctx.getText());
+            if (fieldReference <= 0) {
+                throw new RuntimeException("Invalid select term reference");
+            }
+            AggregationBuilder aggregationBuilder = null;
+            Object selectedTerm = this.nonAggSelectTerms.get(fieldReference);
+            if (selectedTerm instanceof String) {
+                // Source field
+                String aggregationName = String.format("%s-aggregation", selectedTerm);
+                // TODO: figure out this ValueType idea
+                TermsAggregationBuilder tab = new TermsAggregationBuilder(aggregationName, ValueType.STRING);
+                tab.field((String) selectedTerm);
+                aggregationBuilder = tab;
+            } else if (selectedTerm instanceof Script) {
+                // Script field
+                // TODO: Make this name consistent with the other name
+                String aggregationName = String.format("script-%s-aggregation", fieldReference);
+                TermsAggregationBuilder tab = new TermsAggregationBuilder(aggregationName, ValueType.STRING);
+                tab.script((Script) selectedTerm);
+                aggregationBuilder = tab;
+            }
+            if (this.parentAggregationBuilder == null) {
+                // Then this is the top-level aggregation
+                this.searchRequestBuilder.addAggregation(aggregationBuilder);
+                this.parentAggregationBuilder = aggregationBuilder;
+            } else {
+                this.parentAggregationBuilder.subAggregation(aggregationBuilder);
+                this.parentAggregationBuilder = aggregationBuilder;
+            }
+            this.nonAggSelectTerms.remove(fieldReference);
+        } else {
+            throw new RuntimeException("Unimplemented GROUP BY term representation");
+        }
+    }
+
+    public void exitAggregation_spec(esqlParser.Aggregation_specContext ctx) {
+        this.hasAggregations = true;
+        if (this.nonAggSelectTerms.size() > 0) {
+            StringBuilder stringBuilder = new StringBuilder();
+            for (Object selectTerm : this.nonAggSelectTerms.values()) {
+                if (selectTerm instanceof String) {
+                    stringBuilder.append((String) selectTerm);
+                } else if (selectTerm instanceof Script) {
+                    stringBuilder.append(((Script) selectTerm).getIdOrCode());
+                }
+                stringBuilder.append(',');
+            }
+            String nonAggNonGroupByList = stringBuilder.toString();
+
+            throw new RuntimeException(String.format("Non aggregate terms: %s", nonAggNonGroupByList));
+        }
+        if (this.parentAggregationBuilder == null) {
+            for (AggregationBuilder ab : this.leafAggregations.values()) {
+                this.searchRequestBuilder.addAggregation(ab);
+            }
+        } else {
+            for (AggregationBuilder ab : this.leafAggregations.values()) {
+                this.parentAggregationBuilder.subAggregation(ab);
+            }
+        }
     }
 
     public SearchRequestBuilder getSearchRequestBuilder() {

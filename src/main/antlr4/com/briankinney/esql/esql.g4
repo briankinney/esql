@@ -17,18 +17,13 @@ DESC: 'DESC';
 LIKE: 'LIKE';
 GROUP: 'GROUP';
 SCORE: 'SCORE';
-ADD: '+';
-SUB: '-';
-MULT: '*';
-DIV: '/';
 PAINLESS: 'PAINLESS';
 
 search_query
     : SELECT path_spec
       FROM index_spec
       (WHERE filter_spec)?
-//    TODO
-//    (GROUP BY aggregation_spec)?
+      (GROUP BY aggregation_spec)?
       (ORDER BY sort_spec)?
       (LIMIT limit_spec)?
       ';'
@@ -83,9 +78,7 @@ formula
     : field
     | literal
 //    TODO
-//  | '(' formula ')'
-//  | formula BINARY_OPERATOR formula
-//  | function '(' formula ')'
+//  | painless_script
     ;
 
 function
@@ -116,8 +109,9 @@ aggregation_spec
 
 aggregation_term
     : field_ref
-    | field
-    | painless_script
+//    TODO
+//  | field
+//  | painless_script
     ;
 
 field_ref
@@ -146,13 +140,6 @@ COMPARATOR
     | '>='
 //    TODO
 //  | '~='
-    ;
-
-BINARY_OPERATOR
-    : ADD
-    | SUB
-    | MULT
-    | DIV
     ;
 
 STRING_LITERAL: '\''.*?'\'';

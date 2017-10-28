@@ -7,7 +7,7 @@ import org.elasticsearch.index.query.*;
  * age > 24
  * name != 'John'
  */
-public class TermQueryHelper {
+public class ComparisonQueryHelper {
     private static final String EQUAL = "=";
     private static final String NOT_EQUAL = "!=";
     private static final String LESS_THAN = "<";
