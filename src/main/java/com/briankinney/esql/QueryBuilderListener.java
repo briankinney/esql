@@ -7,11 +7,11 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.script.Script;
+import org.elasticsearch.search.aggregations.support.ValuesSourceAggregationBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.ScoreSortBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -42,8 +42,14 @@ public class QueryBuilderListener extends esqlBaseListener {
     private Map<String, Script> scriptFields =
             new HashMap<String, Script>();
 
+    private Map<String, ValuesSourceAggregationBuilder> leafAggregations = new HashMap<String, ValuesSourceAggregationBuilder>();
+
     private String anonymousScriptFieldName() {
         return String.format("script-field-%d", scriptFields.size());
+    }
+
+    private String anonymousAggregationName(String aggregationType) {
+        return String.format("%s-aggregation-%d", aggregationType, leafAggregations.size());
     }
 
     public void enterPath_spec(esqlParser.Path_specContext ctx) {
@@ -81,8 +87,22 @@ public class QueryBuilderListener extends esqlBaseListener {
                 Script painlessScript = new Script(painlessScriptText);
                 this.scriptFields.put(name, painlessScript);
             } else if (ctx.aggregate_formula() != null) {
-                // TODO
-                throw new NotImplementedException();
+                String aggregationType = ctx.aggregate_formula().getText();
+                String aggregationName = anonymousAggregationName(aggregationType);
+                ValuesSourceAggregationBuilder aggregationBuilder = AggregationHelper.getAggregationBuilder(aggregationName, aggregationType);
+                if (ctx.aggregate_formula().field() != null) {
+                    aggregationBuilder.field(ctx.aggregate_formula().field().getText());
+                }
+                else if (ctx.aggregate_formula().painless_script() != null) {
+                    String scriptText = ctx.aggregate_formula().painless_script().PAINLESS_SCRIPT_BODY().getText();
+                    scriptText = scriptText.substring(1, scriptText.length() - 1);
+                    Script script = new Script(scriptText);
+                    aggregationBuilder.script(script);
+                }
+                else {
+                    throw new RuntimeException("Unexpected aggregate_formula branch");
+                }
+                this.leafAggregations.put(aggregationName, aggregationBuilder);
             }
         }
     }
