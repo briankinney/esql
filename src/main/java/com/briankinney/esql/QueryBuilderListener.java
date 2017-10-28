@@ -5,7 +5,6 @@ import com.briankinney.esql.query.*;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.xcontent.ObjectParser;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -37,6 +36,15 @@ public class QueryBuilderListener extends esqlBaseListener {
 
     public void enterSearch_query(esqlParser.Search_queryContext ctx) {
         this.searchRequestBuilder = SearchAction.INSTANCE.newRequestBuilder(this.transportClient);
+    }
+
+    public void exitSearch_query(esqlParser.Search_queryContext ctx) {
+        // Add aggregations when there are no GROUP BY terms
+        if (this.parentAggregationBuilder == null) {
+            for (AggregationBuilder ab : this.leafAggregations.values()) {
+                this.searchRequestBuilder.addAggregation(ab);
+            }
+        }
     }
 
     private boolean gatherPaths = false;
@@ -97,7 +105,7 @@ public class QueryBuilderListener extends esqlBaseListener {
                 this.scriptFields.put(name, painlessScript);
                 this.nonAggSelectTerms.put(this.selectTermIndex, painlessScript);
             } else if (ctx.aggregate_formula() != null) {
-                String aggregationType = ctx.aggregate_formula().getText();
+                String aggregationType = ctx.aggregate_formula().function().getText();
                 String aggregationName = anonymousAggregationName(aggregationType);
                 ValuesSourceAggregationBuilder aggregationBuilder = AggregationHelper.getAggregationBuilder(aggregationName, aggregationType);
                 if (ctx.aggregate_formula().field() != null) {
@@ -208,8 +216,6 @@ public class QueryBuilderListener extends esqlBaseListener {
 
     private AggregationBuilder parentAggregationBuilder = null;
 
-    private boolean hasAggregations = false;
-
     public void enterAggregation_term(esqlParser.Aggregation_termContext ctx) {
         if (ctx.field_ref() != null) {
             int fieldReference = Integer.parseInt(ctx.getText());
@@ -248,7 +254,6 @@ public class QueryBuilderListener extends esqlBaseListener {
     }
 
     public void exitAggregation_spec(esqlParser.Aggregation_specContext ctx) {
-        this.hasAggregations = true;
         if (this.nonAggSelectTerms.size() > 0) {
             StringBuilder stringBuilder = new StringBuilder();
             for (Object selectTerm : this.nonAggSelectTerms.values()) {
@@ -263,14 +268,8 @@ public class QueryBuilderListener extends esqlBaseListener {
 
             throw new RuntimeException(String.format("Non aggregate terms: %s", nonAggNonGroupByList));
         }
-        if (this.parentAggregationBuilder == null) {
-            for (AggregationBuilder ab : this.leafAggregations.values()) {
-                this.searchRequestBuilder.addAggregation(ab);
-            }
-        } else {
-            for (AggregationBuilder ab : this.leafAggregations.values()) {
-                this.parentAggregationBuilder.subAggregation(ab);
-            }
+        for (AggregationBuilder ab : this.leafAggregations.values()) {
+            this.parentAggregationBuilder.subAggregation(ab);
         }
     }
 
