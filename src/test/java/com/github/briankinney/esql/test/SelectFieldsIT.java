@@ -182,8 +182,6 @@ public class SelectFieldsIT extends EsqlTestCase {
         String query = String.format("SELECT \"from\", \"to\", count(timestamp) FROM %s GROUP BY 1;", messagesIndexName);
 
         esqlClient.executeSearch(query);
-
-        fail("Exception should have been thrown");
     }
 
     @Test(expected = RuntimeException.class)
@@ -191,7 +189,5 @@ public class SelectFieldsIT extends EsqlTestCase {
         String query = String.format("SELECT \"from\", \"to\", count(timestamp) FROM %s;", messagesIndexName);
 
         esqlClient.executeSearch(query);
-
-        fail("Exception should have been thrown");
     }
 }
