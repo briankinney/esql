@@ -1,6 +1,6 @@
-package com.briankinney.esql.cli;
+package com.github.briankinney.esql.cli;
 
-import com.briankinney.esql.client.EsqlClient;
+import com.github.briankinney.esql.client.EsqlClient;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.elasticsearch.action.search.SearchResponse;

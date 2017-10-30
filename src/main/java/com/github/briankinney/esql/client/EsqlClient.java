@@ -1,8 +1,8 @@
-package com.briankinney.esql.client;
+package com.github.briankinney.esql.client;
 
-import com.briankinney.esql.QueryBuilderListener;
-import com.briankinney.esql.esqlLexer;
-import com.briankinney.esql.esqlParser;
+import com.github.briankinney.esql.query.QueryBuilderListener;
+import com.github.briankinney.esql.esqlLexer;
+import com.github.briankinney.esql.esqlParser;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.elasticsearch.action.ActionFuture;

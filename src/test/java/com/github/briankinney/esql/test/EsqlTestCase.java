@@ -1,6 +1,6 @@
-package com.briankinney.esql.test;
+package com.github.briankinney.esql.test;
 
-import com.briankinney.esql.client.EsqlClient;
+import com.github.briankinney.esql.client.EsqlClient;
 import org.apache.commons.codec.binary.Base64;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
@@ -22,7 +22,7 @@ import java.util.Random;
  * <p>
  * Requires a development instance running at localhost:9200 with cluster name docker-cluster.
  * <p>
- * misc/es-docker.sh is provided to set this up for convenience
+ * bin/es-docker.sh is provided to set this up for convenience
  */
 class EsqlTestCase {
 

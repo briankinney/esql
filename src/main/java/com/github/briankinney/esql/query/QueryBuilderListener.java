@@ -1,7 +1,8 @@
-package com.briankinney.esql;
+package com.github.briankinney.esql.query;
 
 
-import com.briankinney.esql.query.*;
+import com.github.briankinney.esql.esqlBaseListener;
+import com.github.briankinney.esql.esqlParser;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;

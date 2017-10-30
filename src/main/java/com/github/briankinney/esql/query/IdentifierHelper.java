@@ -1,4 +1,4 @@
-package com.briankinney.esql.query;
+package com.github.briankinney.esql.query;
 
 public class IdentifierHelper {
     /**

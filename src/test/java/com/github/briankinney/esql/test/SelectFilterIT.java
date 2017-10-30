@@ -1,4 +1,4 @@
-package com.briankinney.esql.test;
+package com.github.briankinney.esql.test;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;

@@ -38,7 +38,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.briankinney.esql.cli.Tool</mainClass>
+                            <mainClass>com.github.briankinney.esql.cli.Tool</mainClass>
                         </manifest>
                     </archive>
                     <finalName>esql</finalName>

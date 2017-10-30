@@ -1,4 +1,4 @@
-package com.briankinney.esql.query;
+package com.github.briankinney.esql.query;
 
 
 import org.elasticsearch.index.query.QueryBuilder;

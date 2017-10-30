@@ -1,6 +1,6 @@
-package com.briankinney.esql.query;
+package com.github.briankinney.esql.query;
 
-import com.briankinney.esql.esqlParser;
+import com.github.briankinney.esql.esqlParser;
 
 /**
  * Create an object to contain a value represented in the query as a literal value, eg:
