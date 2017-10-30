@@ -141,4 +141,57 @@ public class SelectFieldsIT extends EsqlTestCase {
         assertEquals("sum-aggregation-0", aggregation.getName());
         assertEquals(10, ((Sum) aggregation).getValue(), 0);
     }
+
+    @Test
+    public void TestScriptValueGroupBy() {
+        for (int i = 0; i < 6; i++) {
+            addMessage(messagesIndexName, "Alice", "Bob", "Message", "Body", i);
+            if (i >= 4) {
+                addMessage(messagesIndexName, "Bob", "Alice", "Hello", "Goodbye", i);
+            }
+        }
+
+        waitForEs();
+
+        String query = String.format("SELECT PAINLESS `doc[\"from\"].getValue() + doc[\"to\"].getValue()`, count(timestamp) FROM %s GROUP BY 1;", messagesIndexName);
+        SearchResponse searchResponse = esqlClient.executeSearch(query);
+
+        Aggregations aggs = searchResponse.getAggregations();
+        assertEquals(1, aggs.asList().size());
+
+        // this aggregation type is given a hungarian notation-like type name in the response. s is for String
+        assertEquals("sterms", aggs.asList().get(0).getType());
+        List<? extends Terms.Bucket> buckets = ((Terms) aggs.asList().get(0)).getBuckets();
+
+        for (Terms.Bucket b : buckets) {
+            Aggregation subAggregation = b.getAggregations().asList().get(0);
+            assertEquals("value_count", subAggregation.getType());
+            assertEquals("count-aggregation-0", subAggregation.getName());
+            if (b.getKeyAsString().equals("AliceBob")) {
+                assertEquals(6, ((ValueCount) subAggregation).getValue());
+            } else if (b.getKeyAsString().equals("BobAlice")) {
+                assertEquals(2, ((ValueCount) subAggregation).getValue());
+            } else {
+                fail(String.format("Unexpected bucket key %s", b.getKeyAsString()));
+            }
+        }
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void TestNonAggSelectTermsRejected() {
+        String query = String.format("SELECT \"from\", \"to\", count(timestamp) FROM %s GROUP BY 1;", messagesIndexName);
+
+        esqlClient.executeSearch(query);
+
+        fail("Exception should have been thrown");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void TestAggNoGroupByRejected() {
+        String query = String.format("SELECT \"from\", \"to\", count(timestamp) FROM %s;", messagesIndexName);
+
+        esqlClient.executeSearch(query);
+
+        fail("Exception should have been thrown");
+    }
 }

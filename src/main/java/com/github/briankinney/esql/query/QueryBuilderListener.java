@@ -46,6 +46,22 @@ public class QueryBuilderListener extends esqlBaseListener {
                 this.searchRequestBuilder.addAggregation(ab);
             }
         }
+
+        // Check that all non-aggregate select terms were referenced in the GROUP BY clause
+        if (this.nonAggSelectTerms.size() > 0) {
+            StringBuilder stringBuilder = new StringBuilder();
+            for (Object selectTerm : this.nonAggSelectTerms.values()) {
+                if (selectTerm instanceof String) {
+                    stringBuilder.append((String) selectTerm);
+                } else if (selectTerm instanceof Script) {
+                    stringBuilder.append(((Script) selectTerm).getIdOrCode());
+                }
+                stringBuilder.append(',');
+            }
+            String nonAggNonGroupByList = stringBuilder.toString();
+
+            throw new RuntimeException(String.format("Non aggregate terms: %s", nonAggNonGroupByList));
+        }
     }
 
     private boolean gatherPaths = false;
@@ -256,20 +272,6 @@ public class QueryBuilderListener extends esqlBaseListener {
     }
 
     public void exitAggregation_spec(esqlParser.Aggregation_specContext ctx) {
-        if (this.nonAggSelectTerms.size() > 0) {
-            StringBuilder stringBuilder = new StringBuilder();
-            for (Object selectTerm : this.nonAggSelectTerms.values()) {
-                if (selectTerm instanceof String) {
-                    stringBuilder.append((String) selectTerm);
-                } else if (selectTerm instanceof Script) {
-                    stringBuilder.append(((Script) selectTerm).getIdOrCode());
-                }
-                stringBuilder.append(',');
-            }
-            String nonAggNonGroupByList = stringBuilder.toString();
-
-            throw new RuntimeException(String.format("Non aggregate terms: %s", nonAggNonGroupByList));
-        }
         for (AggregationBuilder ab : this.leafAggregations.values()) {
             this.parentAggregationBuilder.subAggregation(ab);
         }
