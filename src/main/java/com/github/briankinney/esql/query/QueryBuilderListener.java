@@ -117,7 +117,8 @@ public class QueryBuilderListener extends esqlBaseListener {
                     Script script = new Script(scriptText);
                     aggregationBuilder.script(script);
                 } else {
-                    throw new RuntimeException("Unexpected aggregate_formula branch");
+                    String message = String.format("Unexpected aggregate_formula branch at %s", ctx.getText());
+                    throw new RuntimeException(message);
                 }
                 this.leafAggregations.put(aggregationName, aggregationBuilder);
             }
