@@ -36,6 +36,8 @@ public class QueryBuilderListener extends esqlBaseListener {
         this.transportClient = transportClient;
     }
 
+    private boolean hasAggregates = false;
+
     public void enterSearch_query(esqlParser.Search_queryContext ctx) {
         this.searchRequestBuilder = SearchAction.INSTANCE.newRequestBuilder(this.transportClient);
     }
@@ -49,7 +51,7 @@ public class QueryBuilderListener extends esqlBaseListener {
         }
 
         // Check that all non-aggregate select terms were referenced in the GROUP BY clause
-        if (this.nonAggSelectTerms.size() > 0) {
+        if (this.hasAggregates && this.nonAggSelectTerms.size() > 0) {
             StringBuilder stringBuilder = new StringBuilder();
             for (Object selectTerm : this.nonAggSelectTerms.values()) {
                 if (selectTerm instanceof String) {
@@ -123,6 +125,7 @@ public class QueryBuilderListener extends esqlBaseListener {
                 this.scriptFields.put(name, painlessScript);
                 this.nonAggSelectTerms.put(this.selectTermIndex, painlessScript);
             } else if (ctx.aggregate_formula() != null) {
+                this.hasAggregates = true;
                 String aggregationType = ctx.aggregate_formula().function().getText();
                 String aggregationName = anonymousAggregationName(aggregationType);
                 ValuesSourceAggregationBuilder aggregationBuilder = AggregationHelper.getAggregationBuilder(aggregationName, aggregationType);
@@ -245,6 +248,7 @@ public class QueryBuilderListener extends esqlBaseListener {
     private AggregationBuilder parentAggregationBuilder = null;
 
     public void enterAggregation_term(esqlParser.Aggregation_termContext ctx) {
+        this.hasAggregates = true;
         if (ctx.field_ref() != null) {
             int fieldReference = Integer.parseInt(ctx.getText());
             if (fieldReference <= 0) {
