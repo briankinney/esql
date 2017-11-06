@@ -4,7 +4,7 @@ grammar esql;
 // TODO: case-insensitive keywords
 SELECT: 'SELECT';
 FROM: 'FROM';
-MATCHING: 'MATCHING';
+MATCHES: 'MATCHES';
 WHERE: 'WHERE';
 LIMIT: 'LIMIT';
 AND: 'AND';
@@ -66,9 +66,10 @@ filter_spec
     ;
 
 leaf_query
-    : field COMPARATOR literal // leaf query
+    : field COMPARATOR literal
+    | field MATCHES STRING_LITERAL
 //    TODO
-//  | literal COMPARATOR field // leaf query
+//  | literal COMPARATOR field
 //  | formula COMPARATOR formula
 //  | formula BETWEEN formula AND formula
 //  | field

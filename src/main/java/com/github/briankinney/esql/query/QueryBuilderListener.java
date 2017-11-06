@@ -6,6 +6,7 @@ import com.github.briankinney.esql.esqlParser;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -157,14 +158,23 @@ public class QueryBuilderListener extends esqlBaseListener {
         }
         QueryBuilder b = null;
         if (ctx.leaf_query() != null) {
-            // Leaf query
-            // get the comparator
-            String comparator = ctx.leaf_query().COMPARATOR().getText();
-            // get the field name
-            String fieldName = ctx.leaf_query().field().getText();
-            // get the literal
-            Object literal = LiteralHelper.getLiteral(ctx.leaf_query().literal());
-            b = ComparisonQueryHelper.getTermQuery(fieldName, comparator, literal);
+            esqlParser.Leaf_queryContext leafCtx = ctx.leaf_query();
+            if (leafCtx.COMPARATOR() != null) {
+                // Leaf query
+                // get the comparator
+                String comparator = ctx.leaf_query().COMPARATOR().getText();
+                // get the field name
+                String fieldName = ctx.leaf_query().field().getText();
+                // get the literal
+                Object literal = LiteralHelper.getLiteral(ctx.leaf_query().literal());
+                b = ComparisonQueryHelper.getTermQuery(fieldName, comparator, literal);
+            } else if (leafCtx.MATCHES() != null) {
+                // Match query
+                String fieldName = leafCtx.field().getText();
+                String literalText = leafCtx.STRING_LITERAL().getText();
+                String terms = literalText.substring(1, literalText.length() - 1);
+                b = new MatchQueryBuilder(fieldName, terms);
+            }
         } else if (ctx.NOT() != null) {
             // NOT query
             SimpleParentQueryBuilder pb = new NotQueryBuilder();

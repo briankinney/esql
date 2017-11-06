@@ -120,4 +120,18 @@ public class SelectFilterIT extends EsqlTestCase {
 
         assertEquals(1, searchResponse.getHits().totalHits);
     }
+
+    @Test
+    public void TestMatchQuery() {
+        addMessage(messagesIndexName, "Alice", "Bob", "Title", "I will send many messages. They are not for sharing", 10);
+        addMessage(messagesIndexName, "Alice", "Bob", "A note", "This does not contain the search terms", 11);
+
+        waitForEs();
+
+        String query = String.format("SELECT * FROM %s WHERE body MATCHES 'sharing messages';", messagesIndexName);
+
+        SearchResponse searchResponse = esqlClient.executeSearch(query);
+
+        assertEquals(1, searchResponse.getHits().totalHits);
+    }
 }
