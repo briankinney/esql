@@ -7,7 +7,6 @@ import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.metrics.sum.Sum;
-import org.elasticsearch.search.aggregations.metrics.sum.SumAggregator;
 import org.elasticsearch.search.aggregations.metrics.valuecount.ValueCount;
 import org.junit.After;
 import org.junit.Before;
